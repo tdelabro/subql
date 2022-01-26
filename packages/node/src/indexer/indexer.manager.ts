@@ -26,7 +26,7 @@ import {
   SubqlNetworkFilter,
   SubqlRuntimeHandler,
 } from '@subql/types';
-import { QueryTypes, Sequelize } from 'sequelize';
+import { QueryTypes, Sequelize, Transaction } from 'sequelize';
 import { NodeConfig } from '../configure/NodeConfig';
 import { SubqueryProject } from '../configure/project.model';
 import { SubqueryRepo } from '../entities';
@@ -84,13 +84,19 @@ export class IndexerManager {
     blockContent: BlockContent,
     apiAt: ApiAt,
     blockHeight: number,
+    tx: Transaction,
   ): Promise<void> {
     const vm = this.sandboxService.getDsProcessor(ds, apiAt);
 
     // Inject function to create ds into vm
     vm.freeze(
       (name: string, args?: Record<string, unknown>) =>
-        this.dynamicDsService.createDynamicDatasource(name, args, blockHeight),
+        this.dynamicDsService.createDynamicDatasource(
+          name,
+          args,
+          blockHeight,
+          tx,
+        ),
       'createDynamicDatasource',
     );
 
@@ -125,12 +131,12 @@ export class IndexerManager {
 
       // Run predefined data sources
       for (const ds of this.filteredDataSources) {
-        await this.indexBlockForDs(ds, blockContent, apiAt, blockHeight);
+        await this.indexBlockForDs(ds, blockContent, apiAt, blockHeight, tx);
       }
 
       // Run dynamic data sources, must be after predefined datasources
       for (const ds of await this.dynamicDsService.getDynamicDatasources()) {
-        await this.indexBlockForDs(ds, blockContent, apiAt, blockHeight);
+        await this.indexBlockForDs(ds, blockContent, apiAt, blockHeight, tx);
       }
 
       await this.storeService.setMetadataBatch(
@@ -183,7 +189,7 @@ export class IndexerManager {
       ]);
     }
 
-    let startHeight;
+    let startHeight: number;
     const lastProcessedHeight = await this.metadataRepo.findOne({
       where: { key: 'lastProcessedHeight' },
     });

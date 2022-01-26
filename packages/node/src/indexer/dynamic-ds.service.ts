@@ -3,7 +3,6 @@
 
 import { Injectable } from '@nestjs/common';
 import {
-  CustomDatasourceV0_2_0,
   CustomDataSourceV0_2_0Impl,
   isCustomDs,
   isRuntimeDs,
@@ -13,6 +12,7 @@ import {
 import { SubqlDatasource, SubqlDatasourceKind } from '@subql/types';
 import { plainToClass } from 'class-transformer';
 import yaml from 'js-yaml';
+import { Transaction } from 'sequelize/types';
 import { SubqueryProject } from '../configure/project.model';
 import { getLogger } from '../utils/logger';
 import { DsProcessorService } from './ds-processor.service';
@@ -47,6 +47,7 @@ export class DynamicDsService {
     templateName: string,
     args: Record<string, unknown>,
     currentBlock: number,
+    tx: Transaction,
   ): Promise<void> {
     const manifest = this.project.projectManifest;
 
@@ -86,7 +87,7 @@ export class DynamicDsService {
       process.exit(1);
     }
 
-    await this.saveDynamicDatasource(ds);
+    await this.saveDynamicDatasource(ds, tx);
   }
 
   async getDynamicDatasources(): Promise<SubqlDatasource[]> {
@@ -111,7 +112,10 @@ export class DynamicDsService {
     });
   }
 
-  private async saveDynamicDatasource(ds: SubqlDatasource): Promise<void> {
+  private async saveDynamicDatasource(
+    ds: SubqlDatasource,
+    tx: Transaction,
+  ): Promise<void> {
     const existing = await this.getDynamicDatasources();
 
     // Need to convert Map objects to records
@@ -120,6 +124,7 @@ export class DynamicDsService {
     await this.storeService.setMetadata(
       METADATA_KEY,
       yaml.dump([...existing, dsObj]),
+      { transaction: tx },
     );
   }
 }
