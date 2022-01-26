@@ -52,6 +52,7 @@ const prepare = async (): Promise<IndexerManager> => {
             undefined,
             undefined,
             undefined,
+            undefined,
             subqueryRepo,
             undefined,
           );

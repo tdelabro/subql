@@ -49,8 +49,8 @@ export class DsProcessorService {
   } = {};
   constructor(private project: SubqueryProject) {}
 
-  async validateCustomDs(): Promise<void> {
-    for (const ds of this.project.dataSources.filter(isCustomDs)) {
+  async validateCustomDs(datasources: SubqlCustomDatasource[]): Promise<void> {
+    for (const ds of datasources) {
       const processor = this.getDsProcessor(ds);
       /* Standard validation applicable to all custom ds and processors */
       if (ds.kind !== processor.kind) {
@@ -78,6 +78,10 @@ export class DsProcessorService {
       /* Additional processor specific validation */
       processor.validate(ds, await this.getAssets(ds));
     }
+  }
+
+  async validateProjectCustomDatasources(): Promise<void> {
+    await this.validateCustomDs(this.project.dataSources.filter(isCustomDs));
   }
 
   getDsProcessor<D extends string, T extends SubqlNetworkFilter>(

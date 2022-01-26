@@ -12,6 +12,7 @@ import {
   manifestIsV0_2_0,
   loadChainTypes,
   ChainTypes,
+  manifestIsV0_2_1,
 } from '@subql/common';
 import { SubqlDatasource } from '@subql/types';
 import chalk from 'chalk';
@@ -72,7 +73,7 @@ export class SubqueryProject {
       };
     }
 
-    if (manifestIsV0_2_0(impl)) {
+    if (manifestIsV0_2_0(impl) || manifestIsV0_2_1(impl)) {
       const network = {
         ...impl.network,
         ...this.networkOverrides,
