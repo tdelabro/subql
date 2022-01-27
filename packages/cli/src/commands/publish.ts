@@ -1,11 +1,18 @@
 // Copyright 2020-2021 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {lstatSync} from 'fs';
+import {lstatSync, readFileSync} from 'fs';
 import path from 'path';
 import {Command, flags} from '@oclif/command';
+import yaml from 'js-yaml';
 import {uploadToIpfs} from '../controller/publish-controller';
 import Build from './build';
+
+// Authorization spec is small enough not to have its own specVersion.
+// Additionally when authorization requirements change we would like this to be a breaking change
+class AuthorizationSpec {
+  secret: string;
+}
 
 export default class Publish extends Command {
   static description = 'Upload this SubQuery project to IPFS';
@@ -13,6 +20,7 @@ export default class Publish extends Command {
   static flags = {
     location: flags.string({char: 'l', description: 'local folder'}),
     ipfs: flags.string({description: 'IPFS gateway endpoint', default: 'http://localhost:5001/api/v0'}),
+    authToken: flags.string({description: 'Github auth token', required: false}),
   };
 
   async run(): Promise<void> {
@@ -32,9 +40,19 @@ export default class Publish extends Command {
       this.error('Failed to build project');
     }
 
-    this.log('Uploading SupQuery project to IPFS');
-    const cid = await uploadToIpfs(flags.ipfs, directory);
+    let authToken: string;
+    if (flags.authToken) {
+      authToken = flags.authToken;
+    } else {
+      try {
+        authToken = (yaml.load(readFileSync('auth.yaml', 'utf8')) as AuthorizationSpec).secret;
+      } catch (e) {
+        this.error(`Failed to read authToken from "auth.yaml": ${e}`);
+      }
+    }
 
+    this.log('Uploading SupQuery project to IPFS');
+    const cid = await uploadToIpfs(authToken, flags.ipfs, directory).catch((e) => this.error(e));
     this.log(`SubQuery Project uploaded to IPFS: ${cid}`);
   }
 }

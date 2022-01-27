@@ -20,8 +20,8 @@ type FileObject = {
   mtime?: Date | number[] | {secs: number; nsecs?: number};
 };
 
-export async function uploadToIpfs(ipfsEndpoint: string, projectDir: string): Promise<string> {
-  const ipfs = IPFS.create({url: ipfsEndpoint});
+export async function uploadToIpfs(authToken: string, ipfsEndpoint: string, projectDir: string): Promise<string> {
+  const ipfs = IPFS.create({url: ipfsEndpoint, headers: {Authorization: `Bearer ${authToken}`}});
 
   const projectManifestPath = path.resolve(projectDir, 'project.yaml');
   const manifest = loadProjectManifest(projectManifestPath).asImpl;
