@@ -20,7 +20,7 @@ export default class Publish extends Command {
   static flags = {
     location: flags.string({char: 'l', description: 'local folder'}),
     ipfs: flags.string({description: 'IPFS gateway endpoint', default: 'http://localhost:5001/api/v0'}),
-    secret: flags.string({description: 'Github auth token', required: false}),
+    secret: flags.string({description: 'Secret authorization token', required: false}),
   };
 
   async run(): Promise<void> {
